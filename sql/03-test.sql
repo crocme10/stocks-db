@@ -251,6 +251,7 @@ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION test.add_portfolio(
     _name      VARCHAR(255)
   , _owner     VARCHAR(255)
+  , _balance   INTEGER
 )
 RETURNS test.result_type
 AS $$
@@ -260,7 +261,34 @@ DECLARE
   e6 text; e7 text; e8 text; e9 text;
 BEGIN
   SELECT CONCAT('add portfolio', ' ', $1) INTO res.name;
-  SELECT * FROM api.add_portfolio($1, $2, 'EUR') INTO tmp; -- For tests, currency is hardcoded
+  SELECT * FROM api.add_portfolio($1, $2, $3, 'EUR') INTO tmp; -- For tests, currency is hardcoded
+  res.description := json_build_object();
+  res.status := TRUE;
+  RETURN res;
+EXCEPTION
+  when others then get stacked diagnostics e6=returned_sqlstate, e7=message_text, e8=pg_exception_detail, e9=pg_exception_context;
+  res.description := json_build_object('code',e6,'message',e7,'detail',e8,'context',e9);
+  res.status := FALSE;
+  RETURN res;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION test.add_symbol_portfolio(
+    _portfolio    VARCHAR(255)
+  , _ticker       VARCHAR(32)
+  , _quantity     INTEGER
+  , _price        INTEGER
+)
+RETURNS test.result_type
+AS $$
+DECLARE
+  res test.result_type;
+  tmp api.portfolio_type;
+  e6 text; e7 text; e8 text; e9 text;
+BEGIN
+  SELECT CONCAT('add ', $2, ' to portfolio ', $1) INTO res.name;
+  SELECT * FROM api.update_symbol_portfolio($1, $2, $3, $4) INTO tmp; -- For tests, currency is hardcoded
   res.description := json_build_object();
   res.status := TRUE;
   RETURN res;
@@ -292,7 +320,8 @@ BEGIN
   INSERT INTO test.results SELECT * FROM test.find_user('bob');                                -- we check bob is in there
   INSERT INTO test.results SELECT * FROM test.add_symbol('AMD', 'AMD, Inc');                   -- we add a AMD symbol
   INSERT INTO test.results SELECT * FROM test.find_symbol('AMD');                              -- we check AMD is in there
-  INSERT INTO test.results SELECT * FROM test.add_portfolio('Tech', 'bob');                    -- we add a portfolio for bob
+  INSERT INTO test.results SELECT * FROM test.add_portfolio('bobs', 'bob', 100000);            -- we add a portfolio for bob
+  INSERT INTO test.results SELECT * FROM test.add_symbol_portfolio('bobs', 'AMD', 3, 9000);    -- we add 3 shares of AMD
   RETURN QUERY SELECT * from test.results;
 END;
 $$

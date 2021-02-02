@@ -256,6 +256,7 @@ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION api.add_portfolio(
     _name      TEXT
   , _owner     VARCHAR(255)
+  , _balance   INTEGER
   , _currency  CHAR(3)
 ) RETURNS api.portfolio_type
 AS $$
@@ -267,8 +268,8 @@ BEGIN
   INSERT INTO main.portfolios (name, owner, balance, currency) VALUES (
       $1        -- name
     , _id       -- owner
-    , 0         -- balance
-    , $3        -- currency
+    , $3        -- balance
+    , $4        -- currency
   )
   RETURNING id, name, owner, balance, currency, created_at, updated_at INTO res;
   RETURN res;
@@ -301,7 +302,7 @@ CREATE TYPE api.portfolio_symbol_type AS (
 
 CREATE OR REPLACE FUNCTION api.update_symbol_portfolio(
     _portfolio   VARCHAR(255)
-  , _symbol      VARCHAR(32)
+  , _ticker      VARCHAR(32)
   , _quantity    INTEGER        -- how many stocks are added
   , _price       INTEGER        -- price of the stock.
 ) RETURNS api.portfolio_symbol_type
