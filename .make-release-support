@@ -61,6 +61,20 @@ function getLastTag() {
   git tag -l --sort=version:refname v* | grep -v rc | tail -n 1
 }
 
+# This function returns the type of release (ie patch, minor, major).
+# To do this, we first get the tag of the last rc0.
+# We use this tag to display the commit message,
+# which is expected to be something like
+# [version] new XXX prerelease.
+# So by splitting at spaces, we just extract the third field.
+# (it brittle)
+function getReleaseMessage() {
+  local rc0=$(git tag -l --sort=version:refname | grep rc0 | tail -n 1)
+  local release_type=$(git log --format=%B -n 1 v0.12.2-rc0 | cut -d ' ' -f 3)
+  echo "new ${release_type} release"
+}
+
+
 # This function returns the tag(s) for use with Docker.
 # If the version (from getRelease) is a prerelease (finishes with rcN),
 # then we only return this value.
