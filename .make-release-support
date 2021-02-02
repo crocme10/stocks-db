@@ -314,7 +314,7 @@ function splitLog() {
   # For each hash, we use git show to display the information
   for commit_type in ${!assoc[@]}; do
     # We don't want to list all the Version related commits... so skip them.
-    if [ "$commit_type" != "versioned" ]; then
+    if [ "$commit_type" != "Versioned" ]; then
       local commits="${assoc["$commit_type"]}"
       delimiter="--"
       conCatString=$commits$delimiter

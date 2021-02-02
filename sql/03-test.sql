@@ -8,6 +8,35 @@ CREATE TYPE test.result_type AS (
   , description       JSON
 );
 
+---------------------------
+----- C U R R E N C Y -----
+---------------------------
+
+CREATE OR REPLACE FUNCTION test.add_currency(
+    _code    CHAR(3)
+  , _name    VARCHAR(255)
+)
+RETURNS test.result_type
+AS $$
+DECLARE
+  res test.result_type;
+  tmp api.currency_type;
+  e6 text; e7 text; e8 text; e9 text;
+BEGIN
+  SELECT CONCAT('add currency', ' ', $1) INTO res.name;
+  SELECT * FROM api.add_currency($1, $2, 2) INTO tmp;
+  res.description := json_build_object();
+  res.status := TRUE;
+  RETURN res;
+EXCEPTION
+  when others then get stacked diagnostics e6=returned_sqlstate, e7=message_text, e8=pg_exception_detail, e9=pg_exception_context;
+  res.description := json_build_object('code',e6,'message',e7,'detail',e8,'context',e9);
+  res.status := FALSE;
+  RETURN res;
+END;
+$$
+LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION test.add_user(
   _name    VARCHAR(255)
 )
@@ -115,6 +144,7 @@ BEGIN
     , status            BOOLEAN
     , description       JSON
   );
+  INSERT INTO test.results SELECT * FROM test.add_currency('EUR', 'Euro', 2);                  -- we add a currency
   INSERT INTO test.results SELECT * FROM test.add_user('bob');                                 -- we add a user bob
   INSERT INTO test.results SELECT * FROM test.add_duplicate_user('bob');                       -- we add bob again
   INSERT INTO test.results SELECT * FROM test.find_user('bob');                                -- we check bob is in there

@@ -18,14 +18,6 @@ SET SEARCH_PATH = main;
 -- Assumed a unique exchange.
 -- So symbols have a currency attached.
 
-CREATE TABLE IF NOT EXISTS main.users (
-  id UUID PRIMARY KEY DEFAULT public.gen_random_uuid(),
-	name VARCHAR(255) NOT NULL UNIQUE,
-  balance INTEGER
-);
-
-ALTER TABLE main.users OWNER TO bob;
-
 CREATE TABLE IF NOT EXISTS main.currencies (
   code CHAR(3) PRIMARY KEY,
 	name VARCHAR(255) NOT NULL UNIQUE,
@@ -33,6 +25,15 @@ CREATE TABLE IF NOT EXISTS main.currencies (
 );
 
 ALTER TABLE main.currencies OWNER TO bob;
+
+CREATE TABLE IF NOT EXISTS main.users (
+  id UUID PRIMARY KEY DEFAULT public.gen_random_uuid(),
+	name VARCHAR(255) NOT NULL UNIQUE,
+  balance INTEGER,
+  currency CHAR(3) REFERENCES main.currencies(code) ON DELETE RESTRICT
+);
+
+ALTER TABLE main.users OWNER TO bob;
 
 CREATE TABLE IF NOT EXISTS main.symbols (
   id UUID PRIMARY KEY DEFAULT public.gen_random_uuid(),
