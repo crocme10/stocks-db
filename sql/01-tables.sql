@@ -79,7 +79,7 @@ ALTER TABLE main.orders OWNER TO bob;
 CREATE TABLE IF NOT EXISTS main.events (
   id UUID PRIMARY KEY DEFAULT public.gen_random_uuid(),
   symbol UUID REFERENCES main.symbols(id) ON DELETE RESTRICT,
-  price INTEGER,
+  price INTEGER
 );
 
 ALTER TABLE main.portfolio_symbol_map OWNER TO bob;
