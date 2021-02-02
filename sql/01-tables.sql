@@ -47,9 +47,9 @@ ALTER TABLE main.symbols OWNER TO bob;
 
 CREATE TABLE IF NOT EXISTS main.portfolios (
   id UUID PRIMARY KEY DEFAULT public.gen_random_uuid(),
-	description TEXT,
+  name VARCHAR(255) NOT NULL UNIQUE,
 	owner UUID REFERENCES main.users(id) ON DELETE RESTRICT,
-  balance INTEGER,
+  balance INTEGER CHECK (balance > 0),
   currency CHAR(3) REFERENCES main.currencies(code) ON DELETE RESTRICT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -59,7 +59,9 @@ ALTER TABLE main.portfolios OWNER TO bob;
 
 CREATE TABLE IF NOT EXISTS main.portfolio_symbol_map (
   portfolio UUID REFERENCES main.portfolios(id) ON DELETE RESTRICT,
-  symbol UUID REFERENCES main.symbols(id) ON DELETE RESTRICT
+  symbol UUID REFERENCES main.symbols(id) ON DELETE RESTRICT,
+  quantity INTEGER,
+  CONSTRAINT unique_portfolio_symbol UNIQUE(portfolio, symbol)
 );
 
 ALTER TABLE main.portfolio_symbol_map OWNER TO bob;
@@ -71,8 +73,6 @@ CREATE TABLE IF NOT EXISTS main.orders (
   type main.order_type,
   portfolio UUID REFERENCES main.portfolios(id) ON DELETE RESTRICT,
   symbol UUID REFERENCES main.symbols(id) ON DELETE RESTRICT,
-  price INTEGER,
-  currency CHAR(3) REFERENCES main.currencies(code) ON DELETE RESTRICT,
   quantity INTEGER
 );
 

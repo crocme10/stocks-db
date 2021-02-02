@@ -228,3 +228,109 @@ END;
 $$
 LANGUAGE plpgsql;
 
+------------------------------
+----  P O R T F O L I O S ----
+------------------------------
+
+CREATE TYPE api.portfolio_type AS (
+    id           UUID
+  , name         VARCHAR(255)
+  , owner        UUID
+  , balance      INTEGER
+  , currency     CHAR(3)
+  , created_at   TIMESTAMPTZ
+  , updated_at   TIMESTAMPTZ
+);
+
+CREATE OR REPLACE FUNCTION api.list_portfolios()
+RETURNS SETOF api.portfolio_type
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT id, name, owner, balance, currency, created_at, updated_at
+  FROM main.portfolios;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION api.add_portfolio(
+    _name      TEXT
+  , _owner     VARCHAR(255)
+  , _currency  CHAR(3)
+) RETURNS api.portfolio_type
+AS $$
+DECLARE
+  res api.portfolio_type;
+  owner api.user_type;
+BEGIN
+  SELECT * FROM api.find_user_by_name($2) INTO owner;
+  INSERT INTO main.portfolios (name, owner, balance, currency) VALUES (
+      $1        -- name
+    , owner.id  -- owner
+    , 0         -- balance
+    , $3        -- currency
+  )
+  RETURNING id, name, owner, balance, currency, created_at, updated_at INTO res;
+  RETURN res;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION api.find_portfolio_by_name(
+    _name   VARCHAR(255)
+)
+RETURNS api.portfolio_type
+AS $$
+DECLARE
+  res api.portfolio_type;
+BEGIN
+  SELECT id, name, owner, balance, currency, created_at, updated_at
+  FROM main.portfolios
+  WHERE name = _name
+  INTO res;
+  RETURN res;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TYPE api.portfolio_symbol_type AS (
+	  portfolio    VARCHAR(255)
+  , symbol       VARCHAR(32)
+  , quantity     INTEGER
+);
+
+CREATE OR REPLACE FUNCTION api.update_symbol_portfolio(
+    _portfolio   VARCHAR(255)
+  , _symbol      VARCHAR(32)
+  , _quantity    INTEGER        -- how many stocks are added
+  , _price       INTEGER        -- price of the stock.
+) RETURNS api.portfolio_symbol_type
+AS $$
+DECLARE
+  -- exc_insufficient_balance EXCEPTION;
+  -- PRAGMA exception_init(exc_insufficient_balance, -20001);
+  res api.portfolio_symbol_type;
+  portfolio api.portfolio_type;
+  amount INTEGER;
+  balance INTEGER;
+BEGIN
+
+  SELECT * FROM api.find_portfolio_by_name($1) INTO portfolio;
+
+  amount := _quantity * _price;
+  -- We rely on a 'check' on the balance (balance > 0) to make sure there is sufficient fund.
+  UPDATE main.portfolios SET balance = balance - amount WHERE id = portfolio.id;
+  IF EXISTS (SELECT 1 FROM main.portfolio_symbol_map WHERE portfolio = portfolio.id AND symbol = $2) THEN
+    UPDATE main.portfolio_symbol_map
+    SET quantity = quantity + $3
+    WHERE portfolio = $1 AND symbol = $2
+    RETURNING portfolio, symbol, quantity INTO res;
+  ELSE
+    INSERT INTO main.portfolio_symbol_map (portfolio, symbol, quantity)
+    VALUES ($1, $2, $3)
+    RETURNING portfolio, symbol, quantity INTO res;
+  END IF;
+  RETURN res;
+END;
+$$
+LANGUAGE plpgsql;

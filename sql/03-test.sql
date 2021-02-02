@@ -140,24 +140,6 @@ END;
 $$
 LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION test.main()
-RETURNS SETOF test.result_type
-AS $$
-BEGIN
-  CREATE TABLE test.results (
-      name              VARCHAR(255)
-    , status            BOOLEAN
-    , description       JSON
-  );
-  INSERT INTO test.results SELECT * FROM test.add_currency('EUR', 'Euro', 2);                  -- we add a currency
-  INSERT INTO test.results SELECT * FROM test.add_user('bob');                                 -- we add a user bob
-  INSERT INTO test.results SELECT * FROM test.add_duplicate_user('bob');                       -- we add bob again
-  INSERT INTO test.results SELECT * FROM test.find_user('bob');                                -- we check bob is in there
-  RETURN QUERY SELECT * from test.results;
-END;
-$$
-LANGUAGE plpgsql;
-
 -------------------------
 ----- S Y M B O L S -----
 -------------------------
@@ -238,8 +220,8 @@ END;
 $$
 LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION test.delete_user(
-  _name VARCHAR(255)
+CREATE OR REPLACE FUNCTION test.delete_symbol(
+  _ticker VARCHAR(32)
 )
 RETURNS test.result_type
 AS $$
@@ -248,8 +230,8 @@ DECLARE
   tmp api.user_type;
   e6 text; e7 text; e8 text; e9 text;
 BEGIN
-  SELECT CONCAT('delete user', ' ', $1) INTO res.name;
-  SELECT * FROM api.delete_user_by_name($1) INTO tmp;
+  SELECT CONCAT('delete symbol', ' ', $1) INTO res.name;
+  SELECT * FROM api.delete_symbol_by_ticker($1) INTO tmp;
   res.description := json_build_object();
   res.status := TRUE;
   RETURN res;
@@ -262,20 +244,31 @@ END;
 $$
 LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION test.main()
-RETURNS SETOF test.result_type
+-------------------------------
+----- P O R T F O L I O S -----
+-------------------------------
+
+CREATE OR REPLACE FUNCTION test.add_portfolio(
+    _name      VARCHAR(255)
+  , _owner     VARCHAR(255)
+)
+RETURNS test.result_type
 AS $$
+DECLARE
+  res test.result_type;
+  tmp api.symbol_type;
+  e6 text; e7 text; e8 text; e9 text;
 BEGIN
-  CREATE TABLE test.results (
-      name              VARCHAR(255)
-    , status            BOOLEAN
-    , description       JSON
-  );
-  INSERT INTO test.results SELECT * FROM test.add_currency('EUR', 'Euro', 2);                  -- we add a currency
-  INSERT INTO test.results SELECT * FROM test.add_user('bob');                                 -- we add a user bob
-  INSERT INTO test.results SELECT * FROM test.add_duplicate_user('bob');                       -- we add bob again
-  INSERT INTO test.results SELECT * FROM test.find_user('bob');                                -- we check bob is in there
-  RETURN QUERY SELECT * from test.results;
+  SELECT CONCAT('add portfolio', ' ', $1) INTO res.name;
+  SELECT * FROM api.add_portfolio($1, $2, 'EUR') INTO tmp; -- For tests, currency is hardcoded
+  res.description := json_build_object();
+  res.status := TRUE;
+  RETURN res;
+EXCEPTION
+  when others then get stacked diagnostics e6=returned_sqlstate, e7=message_text, e8=pg_exception_detail, e9=pg_exception_context;
+  res.description := json_build_object('code',e6,'message',e7,'detail',e8,'context',e9);
+  res.status := FALSE;
+  RETURN res;
 END;
 $$
 LANGUAGE plpgsql;
@@ -299,6 +292,7 @@ BEGIN
   INSERT INTO test.results SELECT * FROM test.find_user('bob');                                -- we check bob is in there
   INSERT INTO test.results SELECT * FROM test.add_symbol('AMD', 'AMD, Inc');                   -- we add a AMD symbol
   INSERT INTO test.results SELECT * FROM test.find_symbol('AMD');                              -- we check AMD is in there
+  INSERT INTO test.results SELECT * FROM test.add_portfolio('Tech', 'bob');                    -- we add a portfolio for bob
   RETURN QUERY SELECT * from test.results;
 END;
 $$
