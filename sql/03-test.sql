@@ -1,6 +1,6 @@
 DROP SCHEMA IF EXISTS test CASCADE;
-CREATE SCHEMA test AUTHORIZATION croesus;
-GRANT ALL ON SCHEMA test to croesus;
+CREATE SCHEMA test AUTHORIZATION bob;
+GRANT ALL ON SCHEMA test to bob;
 
 CREATE TYPE test.result_type AS (
     name              VARCHAR(255)
