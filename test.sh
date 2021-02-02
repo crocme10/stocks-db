@@ -15,4 +15,5 @@ fi
 cmd="docker run -d -e POSTGRES_PASSWORD=secret -e POSTGRES_DB=${POSTGRES_DB} -p 5432:5432/tcp --name ${DOCKER_NAME} ${DOCKER_REPO}/${PROJECT}:${VERSION}"
 echo "$cmd"
 eval "$cmd"
+
 docker logs -f ${DOCKER_NAME}

@@ -67,18 +67,23 @@ do-push:
 snapshot: build push
 
 tag-new-release: VERSION := $(shell . $(RELEASE_SUPPORT); nextRelease)
+tag-new-release: MSG := $(shell . $(RELEASE_SUPPORT); getReleaseMessage)
 tag-new-release: changelog tag
 
 tag-new-prerelease: VERSION := $(shell . $(RELEASE_SUPPORT); nextPrerelease)
+tag-new-prerelease: MSG := new prerelease
 tag-new-prerelease: tag
 
 tag-patch-prerelease: VERSION := $(shell . $(RELEASE_SUPPORT); nextPatchPrerelease)
+tag-patch-prerelease: MSG := new patch prerelease
 tag-patch-prerelease: tag
 
 tag-minor-prerelease: VERSION := $(shell . $(RELEASE_SUPPORT); nextMinorPrerelease)
+tag-minor-prerelease: MSG := new minor prerelease
 tag-minor-prerelease: tag
 
 tag-major-prerelease: VERSION := $(shell . $(RELEASE_SUPPORT); nextMajorPrerelease)
+tag-major-prerelease: MSG := new major prerelease
 tag-major-prerelease: tag
 
 new-release: tag-new-release release ## Drop the prerelease suffix and release
@@ -102,7 +107,7 @@ tag: check-status ## Check that the tag does not already exist, changes the vers
 	@. $(RELEASE_SUPPORT) ; ! tagExists $(TAG) || (echo "ERROR: tag $(TAG) for version $(VERSION) already tagged in git" >&2 && exit 1) ;
 	@. $(RELEASE_SUPPORT) ; setRelease $(VERSION)
 	git add .
-	git commit -m "[VER] new version $(VERSION)" ;
+	git commit -m "[versioned] $(MSG) $(VERSION)" ;
 	git tag -a $(TAG) -m "Version $(VERSION)";
 	@ if [ -n "$(shell git remote -v)" ] ; then git push --tags ; else echo 'no remote to push tags to' ; fi
 
