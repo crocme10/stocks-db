@@ -87,7 +87,7 @@ ALTER TABLE main.portfolio_symbol_map OWNER TO bob;
 CREATE TABLE IF NOT EXISTS main.stats (
   symbol UUID REFERENCES main.symbols(id) ON DELETE RESTRICT,
   stat_date DATE NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   open INTEGER,
   high INTEGER,
   low INTEGER,
