@@ -1,6 +1,6 @@
 DROP SCHEMA IF EXISTS api CASCADE;
-CREATE SCHEMA api AUTHORIZATION croesus;
-GRANT ALL ON SCHEMA api to croesus;
+CREATE SCHEMA api AUTHORIZATION bob;
+GRANT ALL ON SCHEMA api to bob;
 
 -------------
 --  USERS  --
