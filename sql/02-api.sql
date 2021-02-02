@@ -126,7 +126,7 @@ AS $$
 DECLARE
   res api.currency_type;
 BEGIN
-  SELECT cod, name, decimals
+  SELECT code, name, decimals
   FROM main.currencies
   WHERE code = _code
   INTO res;
@@ -150,3 +150,81 @@ BEGIN
 END;
 $$
 LANGUAGE plpgsql;
+
+------------------------
+----  S Y M B O L S ----
+------------------------
+
+CREATE TYPE api.symbol_type AS (
+    id           UUID
+	, ticker       VARCHAR(32)
+  , name         VARCHAR(255)
+  , currency     CHAR(3)
+  , created_at   TIMESTAMPTZ
+);
+
+CREATE OR REPLACE FUNCTION api.list_symbols()
+RETURNS SETOF api.symbol_type
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT id, ticker, name, currency, created_at
+  FROM main.symbols;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION api.add_symbol(
+    _ticker   VARCHAR(32)
+  , _name     VARCHAR(255)
+  , _currency CHAR(3)
+) RETURNS api.symbol_type
+AS $$
+DECLARE
+  res api.symbol_type;
+BEGIN
+  INSERT INTO main.symbols (ticker, name, currency) VALUES (
+      $1  -- ticker
+    , $2  -- name
+    , $3  -- currency
+  )
+  ON CONFLICT ("ticker") DO UPDATE SET ticker = EXCLUDED.ticker
+  RETURNING id, ticker, name, currency, created_at INTO res;
+  RETURN res;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION api.find_symbol_by_ticker(
+    _ticker   VARCHAR(32)
+)
+RETURNS api.symbol_type
+AS $$
+DECLARE
+  res api.symbol_type;
+BEGIN
+  SELECT id, ticker, name, currency, created_at
+  FROM main.symbols
+  WHERE ticker = _ticker
+  INTO res;
+  RETURN res;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION api.delete_symbol_by_ticker(
+    _ticker   VARCHAR(32)
+)
+RETURNS api.symbol_type
+AS $$
+DECLARE
+  res api.symbol_type;
+BEGIN
+  DELETE FROM main.symbols
+  WHERE ticker = $1
+  RETURNING id, ticker, name, currency, created_at INTO res;
+  RETURN res;
+END;
+$$
+LANGUAGE plpgsql;
+

@@ -38,6 +38,7 @@ ALTER TABLE main.users OWNER TO bob;
 CREATE TABLE IF NOT EXISTS main.symbols (
   id UUID PRIMARY KEY DEFAULT public.gen_random_uuid(),
   ticker VARCHAR(32),
+  name VARCHAR(255) NOT NULL UNIQUE,
   currency CHAR(3) REFERENCES main.currencies(code) ON DELETE RESTRICT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
