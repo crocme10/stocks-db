@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS main.stats (
   open INTEGER,
   high INTEGER,
   low INTEGER,
-  close INTEGER
+  close INTEGER,
   volume INTEGER,
   price INTEGER
 );
