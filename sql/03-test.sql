@@ -13,8 +13,9 @@ CREATE TYPE test.result_type AS (
 ---------------------------
 
 CREATE OR REPLACE FUNCTION test.add_currency(
-    _code    CHAR(3)
-  , _name    VARCHAR(255)
+    _code      CHAR(3)
+  , _name      VARCHAR(255)
+  , _decimals  INTEGER
 )
 RETURNS test.result_type
 AS $$
