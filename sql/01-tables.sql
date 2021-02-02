@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS main.portfolios (
   id UUID PRIMARY KEY DEFAULT public.gen_random_uuid(),
   name VARCHAR(255) NOT NULL UNIQUE,
 	owner UUID REFERENCES main.users(id) ON DELETE RESTRICT,
-  balance INTEGER CHECK (balance > 0),
+  balance INTEGER CHECK (balance >= 0),
   currency CHAR(3) REFERENCES main.currencies(code) ON DELETE RESTRICT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
