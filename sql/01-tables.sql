@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS main.stats (
   low INTEGER,
   close INTEGER
   volume INTEGER,
-  price INTEGER,
+  price INTEGER
 );
 
 ALTER TABLE main.stats OWNER TO bob;
