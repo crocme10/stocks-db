@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS main.orders (
   symbol UUID REFERENCES main.symbols(id) ON DELETE RESTRICT,
   price INTEGER,
   currency CHAR(3) REFERENCES main.currencies(id) ON DELETE RESTRICT,
-  quantity INTEGER,
+  quantity INTEGER
 );
 
 ALTER TABLE main.orders OWNER TO bob;
