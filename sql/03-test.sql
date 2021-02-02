@@ -170,7 +170,7 @@ RETURNS test.result_type
 AS $$
 DECLARE
   res test.result_type;
-  tmp api.user_type;
+  tmp api.symbol_type;
   e6 text; e7 text; e8 text; e9 text;
 BEGIN
   SELECT CONCAT('add symbol', ' ', $1) INTO res.name;
