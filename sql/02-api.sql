@@ -261,12 +261,12 @@ CREATE OR REPLACE FUNCTION api.add_portfolio(
 AS $$
 DECLARE
   res api.portfolio_type;
-  owner api.user_type;
+  _id  UUID;
 BEGIN
-  SELECT * FROM api.find_user_by_name($2) INTO owner;
+  SELECT id FROM api.find_user_by_name($2) INTO _id;
   INSERT INTO main.portfolios (name, owner, balance, currency) VALUES (
       $1        -- name
-    , owner.id  -- owner
+    , _id       -- owner
     , 0         -- balance
     , $3        -- currency
   )
