@@ -70,7 +70,7 @@ function getLastTag() {
 # (it brittle)
 function getReleaseMessage() {
   local rc0=$(git tag -l --sort=version:refname | grep rc0 | tail -n 1)
-  local release_type=$(git log --format=%B -n 1 v0.12.2-rc0 | cut -d ' ' -f 3)
+  local release_type=$(git log --format=%B -n 1 ${rc0} | cut -d ' ' -f 3)
   echo "new ${release_type} release"
 }
 
