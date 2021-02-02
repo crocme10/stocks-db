@@ -26,20 +26,6 @@ CREATE TABLE IF NOT EXISTS main.users (
 
 ALTER TABLE main.users OWNER TO bob;
 
-CREATE TYPE main.order_type AS ENUM ('buy', 'sell');
-
-CREATE TABLE IF NOT EXISTS main.orders (
-  id UUID PRIMARY KEY DEFAULT public.gen_random_uuid(),
-  type main.order_type,
-  portfolio UUID REFERENCES main.portfolios(id) ON DELETE RESTRICT,
-  symbol UUID REFERENCES main.symbols(id) ON DELETE RESTRICT,
-  price INTEGER,
-  currency CHAR(3) REFERENCES main.currencies(id) ON DELETE RESTRICT,
-  quantity INTEGER
-);
-
-ALTER TABLE main.orders OWNER TO bob;
-
 CREATE TABLE IF NOT EXISTS main.currencies (
   code CHAR(3) PRIMARY KEY,
 	name VARCHAR(255) NOT NULL UNIQUE,
@@ -47,6 +33,15 @@ CREATE TABLE IF NOT EXISTS main.currencies (
 );
 
 ALTER TABLE main.currencies OWNER TO bob;
+
+CREATE TABLE IF NOT EXISTS main.symbols (
+  id UUID PRIMARY KEY DEFAULT public.gen_random_uuid(),
+  ticker VARCHAR(32),
+  currency CHAR(3) REFERENCES main.currencies(id) ON DELETE RESTRICT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE main.symbols OWNER TO bob;
 
 CREATE TABLE IF NOT EXISTS main.portfolios (
   id UUID PRIMARY KEY DEFAULT public.gen_random_uuid(),
@@ -60,21 +55,26 @@ CREATE TABLE IF NOT EXISTS main.portfolios (
 
 ALTER TABLE main.portfolios OWNER TO bob;
 
-CREATE TABLE IF NOT EXISTS main.symbols (
-  id UUID PRIMARY KEY DEFAULT public.gen_random_uuid(),
-  ticker VARCHAR(32),
-  currency CHAR(3) REFERENCES main.currencies(id) ON DELETE RESTRICT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-ALTER TABLE main.symbols OWNER TO bob;
-
 CREATE TABLE IF NOT EXISTS main.portfolio_symbol_map (
   portfolio UUID REFERENCES main.portfolios(id) ON DELETE RESTRICT,
   symbol UUID REFERENCES main.symbols(id) ON DELETE RESTRICT
 );
 
 ALTER TABLE main.portfolio_symbol_map OWNER TO bob;
+
+CREATE TYPE main.order_type AS ENUM ('buy', 'sell');
+
+CREATE TABLE IF NOT EXISTS main.orders (
+  id UUID PRIMARY KEY DEFAULT public.gen_random_uuid(),
+  type main.order_type,
+  portfolio UUID REFERENCES main.portfolios(id) ON DELETE RESTRICT,
+  symbol UUID REFERENCES main.symbols(id) ON DELETE RESTRICT,
+  price INTEGER,
+  currency CHAR(3) REFERENCES main.currencies(id) ON DELETE RESTRICT,
+  quantity INTEGER
+);
+
+ALTER TABLE main.orders OWNER TO bob;
 
 CREATE TABLE IF NOT EXISTS main.events (
   id UUID PRIMARY KEY DEFAULT public.gen_random_uuid(),
