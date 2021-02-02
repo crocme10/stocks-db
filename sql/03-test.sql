@@ -298,6 +298,7 @@ BEGIN
   INSERT INTO test.results SELECT * FROM test.add_duplicate_user('bob');                       -- we add bob again
   INSERT INTO test.results SELECT * FROM test.find_user('bob');                                -- we check bob is in there
   INSERT INTO test.results SELECT * FROM test.add_symbol('AMD', 'AMD, Inc');                   -- we add a AMD symbol
+  INSERT INTO test.results SELECT * FROM test.find_symbol('AMD');                              -- we check AMD is in there
   RETURN QUERY SELECT * from test.results;
 END;
 $$
