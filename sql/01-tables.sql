@@ -37,7 +37,7 @@ ALTER TABLE main.currencies OWNER TO bob;
 CREATE TABLE IF NOT EXISTS main.symbols (
   id UUID PRIMARY KEY DEFAULT public.gen_random_uuid(),
   ticker VARCHAR(32),
-  currency CHAR(3) REFERENCES main.currencies(id) ON DELETE RESTRICT,
+  currency CHAR(3) REFERENCES main.currencies(code) ON DELETE RESTRICT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS main.portfolios (
 	description TEXT,
 	owner UUID REFERENCES main.users(id) ON DELETE RESTRICT,
   balance INTEGER,
-  currency CHAR(3) REFERENCES main.currencies(id) ON DELETE RESTRICT,
+  currency CHAR(3) REFERENCES main.currencies(code) ON DELETE RESTRICT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS main.orders (
   portfolio UUID REFERENCES main.portfolios(id) ON DELETE RESTRICT,
   symbol UUID REFERENCES main.symbols(id) ON DELETE RESTRICT,
   price INTEGER,
-  currency CHAR(3) REFERENCES main.currencies(id) ON DELETE RESTRICT,
+  currency CHAR(3) REFERENCES main.currencies(code) ON DELETE RESTRICT,
   quantity INTEGER
 );
 
