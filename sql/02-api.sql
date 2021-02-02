@@ -81,7 +81,7 @@ LANGUAGE plpgsql;
 ------------------
 
 CREATE TYPE api.currency_type AS (
-    code     CHAR(3),
+    code     CHAR(3)
 	, name     VARCHAR(255)
   , decimals INTEGER
 );
