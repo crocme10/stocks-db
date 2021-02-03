@@ -316,8 +316,8 @@ BEGIN
 
   SELECT id FROM api.find_portfolio_by_name($1) INTO _portfolio_id;
   IF _portfolio_id IS NULL THEN
-    RAISE EXCEPTION 'Nonexistent Portfolio --> %', $2
-    USING HINT = 'Please check your portfoli';
+    RAISE EXCEPTION 'Nonexistent Portfolio --> %', $1
+    USING HINT = 'Please check your portfolio';
   END IF;
   SELECT id FROM api.find_symbol_by_ticker($2) INTO _symbol_id;
   IF _symbol_id IS NULL THEN
