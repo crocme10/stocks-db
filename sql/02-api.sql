@@ -321,7 +321,7 @@ BEGIN
 
   _amount := _quantity * _price;
   -- We rely on a 'check' on the balance (balance > 0) to make sure there is sufficient fund.
-  UPDATE main.portfolios SET balance = balance - _amount WHERE id = _id;
+  UPDATE main.portfolios SET balance = balance - _amount WHERE id = _portfolio_id;
   IF EXISTS (SELECT 1 FROM main.portfolio_symbol_map WHERE portfolio = _portfolio_id AND symbol = _symbol_id) THEN
     UPDATE main.portfolio_symbol_map
     SET quantity = quantity + $3
