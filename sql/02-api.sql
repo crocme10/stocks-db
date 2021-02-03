@@ -308,10 +308,6 @@ CREATE OR REPLACE FUNCTION api.update_portfolio_symbol(
 ) RETURNS api.portfolio_symbol_type
 AS $$
 DECLARE
-  exc_unknown_portfolio EXCEPTION;
-  PRAGMA exception_init(exc_unknown_portfolio, -20001);
-  exc_unknown_ticker EXCEPTION;
-  PRAGMA exception_init(exc_unknown_ticker, -20002);
   res            api.portfolio_symbol_type;
   _portfolio_id  UUID;
   _symbol_id     UUID;
@@ -336,10 +332,12 @@ BEGIN
       END IF;
       RETURN res;
     ELSE
-      RAISE exc_unknown_ticker;
+      RAISE EXCEPTION 'Nonexistent Ticker --> %', $2
+      USING HINT = 'Please check your ticker';
     END IF;
   ELSE
-    RAISE exc_unknown_portfolio;
+    RAISE EXCEPTION 'Nonexistent Portfolio --> %', $2
+    USING HINT = 'Please check your portfolio';
   END IF;
 END;
 $$
