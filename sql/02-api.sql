@@ -314,31 +314,31 @@ DECLARE
   _amount        INTEGER;
 BEGIN
 
-  IF EXISTS (SELECT id FROM api.find_portfolio_by_name($1) INTO _portfolio_id) THEN
-    IF EXISTS (SELECT id FROM api.find_symbol_by_ticker($2) INTO _symbol_id) THEN
-
-      _amount := _quantity * _price;
-      -- We rely on a 'check' on the balance (balance > 0) to make sure there is sufficient fund.
-      UPDATE main.portfolios SET balance = balance - _amount WHERE id = _portfolio_id;
-      IF EXISTS (SELECT 1 FROM main.portfolio_symbol_map WHERE portfolio = _portfolio_id AND symbol = _symbol_id) THEN
-        UPDATE main.portfolio_symbol_map
-        SET quantity = quantity + $3
-        WHERE portfolio = _portfolio_id AND symbol = _symbol_id
-        RETURNING portfolio, symbol, quantity INTO res;
-      ELSE
-        INSERT INTO main.portfolio_symbol_map (portfolio, symbol, quantity)
-        VALUES (_portfolio_id, _symbol_id, $3)
-        RETURNING portfolio, symbol, quantity INTO res;
-      END IF;
-      RETURN res;
-    ELSE
-      RAISE EXCEPTION 'Nonexistent Ticker --> %', $2
-      USING HINT = 'Please check your ticker';
-    END IF;
-  ELSE
+  SELECT id FROM api.find_portfolio_by_name($1) INTO _portfolio_id;
+  IF _portfolio_id IS NULL THEN
     RAISE EXCEPTION 'Nonexistent Portfolio --> %', $2
-    USING HINT = 'Please check your portfolio';
+    USING HINT = 'Please check your portfoli';
   END IF;
+  SELECT id FROM api.find_symbol_by_ticker($2) INTO _symbol_id;
+  IF _symbol_id IS NULL THEN
+    RAISE EXCEPTION 'Nonexistent Ticker --> %', $2
+    USING HINT = 'Please check your ticker';
+  END IF;
+
+  _amount := _quantity * _price;
+  -- We rely on a 'check' on the balance (balance > 0) to make sure there is sufficient fund.
+  UPDATE main.portfolios SET balance = balance - _amount WHERE id = _portfolio_id;
+  IF EXISTS (SELECT 1 FROM main.portfolio_symbol_map WHERE portfolio = _portfolio_id AND symbol = _symbol_id) THEN
+    UPDATE main.portfolio_symbol_map
+    SET quantity = quantity + $3
+    WHERE portfolio = _portfolio_id AND symbol = _symbol_id
+    RETURNING portfolio, symbol, quantity INTO res;
+  ELSE
+    INSERT INTO main.portfolio_symbol_map (portfolio, symbol, quantity)
+    VALUES (_portfolio_id, _symbol_id, $3)
+    RETURNING portfolio, symbol, quantity INTO res;
+  END IF;
+  RETURN res;
 END;
 $$
 LANGUAGE plpgsql;
