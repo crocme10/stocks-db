@@ -312,15 +312,14 @@ DECLARE
   -- PRAGMA exception_init(exc_insufficient_balance, -20001);
   res api.portfolio_symbol_type;
   portfolio api.portfolio_type;
-  amount INTEGER;
-  balance INTEGER;
+  _amount INTEGER;
 BEGIN
 
   SELECT * FROM api.find_portfolio_by_name($1) INTO portfolio;
 
-  amount := _quantity * _price;
+  _amount := _quantity * _price;
   -- We rely on a 'check' on the balance (balance > 0) to make sure there is sufficient fund.
-  UPDATE main.portfolios SET balance = balance - amount WHERE id = portfolio.id;
+  UPDATE main.portfolios SET balance = balance - _amount WHERE id = portfolio.id;
   IF EXISTS (SELECT 1 FROM main.portfolio_symbol_map WHERE portfolio = portfolio.id AND symbol = $2) THEN
     UPDATE main.portfolio_symbol_map
     SET quantity = quantity + $3
