@@ -310,10 +310,10 @@ AS $$
 DECLARE
   -- exc_insufficient_balance EXCEPTION;
   -- PRAGMA exception_init(exc_insufficient_balance, -20001);
-  res api.portfolio_symbol_type;
-  _portfolio_id     UUID;
-  _symbol_id        UUID;
-  _amount INTEGER;
+  res            api.portfolio_symbol_type;
+  _portfolio_id  UUID;
+  _symbol_id     UUID;
+  _amount        INTEGER;
 BEGIN
 
   SELECT id FROM api.find_portfolio_by_name($1) INTO _portfolio_id;
@@ -329,7 +329,7 @@ BEGIN
     RETURNING portfolio, symbol, quantity INTO res;
   ELSE
     INSERT INTO main.portfolio_symbol_map (portfolio, symbol, quantity)
-    VALUES ($1, $2, $3)
+    VALUES (_portfolio_id, _symbol_id, $3)
     RETURNING portfolio, symbol, quantity INTO res;
   END IF;
   RETURN res;
