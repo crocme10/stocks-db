@@ -295,8 +295,8 @@ $$
 LANGUAGE plpgsql;
 
 CREATE TYPE api.portfolio_symbol_type AS (
-	  portfolio    VARCHAR(255)
-  , symbol       VARCHAR(32)
+	  portfolio    UUID
+  , symbol       UUID
   , quantity     INTEGER
 );
 
