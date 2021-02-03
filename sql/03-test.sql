@@ -284,11 +284,11 @@ RETURNS test.result_type
 AS $$
 DECLARE
   res test.result_type;
-  tmp api.portfolio_type;
+  tmp api.portfolio_symbol_type;
   e6 text; e7 text; e8 text; e9 text;
 BEGIN
   SELECT CONCAT('add ', $2, ' to portfolio ', $1) INTO res.name;
-  SELECT * FROM api.update_symbol_portfolio($1, $2, $3, $4) INTO tmp; -- For tests, currency is hardcoded
+  SELECT * FROM api.update_portfolio_symbol($1, $2, $3, $4) INTO tmp; -- For tests, currency is hardcoded
   res.description := json_build_object();
   res.status := TRUE;
   RETURN res;

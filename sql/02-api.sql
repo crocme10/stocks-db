@@ -242,6 +242,12 @@ CREATE TYPE api.portfolio_type AS (
   , updated_at   TIMESTAMPTZ
 );
 
+CREATE TYPE api.portfolio_symbol_type AS (
+    portfolio    UUID
+  , symbol       UUID
+  , quantity     INTEGER
+);
+
 CREATE OR REPLACE FUNCTION api.list_portfolios()
 RETURNS SETOF api.portfolio_type
 AS $$
@@ -294,13 +300,7 @@ END;
 $$
 LANGUAGE plpgsql;
 
-CREATE TYPE api.portfolio_symbol_type AS (
-	  portfolio    UUID
-  , symbol       UUID
-  , quantity     INTEGER
-);
-
-CREATE OR REPLACE FUNCTION api.update_symbol_portfolio(
+CREATE OR REPLACE FUNCTION api.update_portfolio_symbol(
     _portfolio   VARCHAR(255)
   , _ticker      VARCHAR(32)
   , _quantity    INTEGER        -- how many stocks are added
