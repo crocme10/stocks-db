@@ -317,7 +317,7 @@ DECLARE
 BEGIN
 
   SELECT id FROM api.find_portfolio_by_name($1) INTO _portfolio_id;
-  SELECT id FROM api.find_symbol_by_name($2) INTO _symbol_id;
+  SELECT id FROM api.find_symbol_by_ticker($2) INTO _symbol_id;
 
   _amount := _quantity * _price;
   -- We rely on a 'check' on the balance (balance > 0) to make sure there is sufficient fund.
