@@ -382,6 +382,7 @@ BEGIN
   INSERT INTO test.results SELECT * FROM test.add_portfolio('bobs', 'bob', 100000);            -- we add a portfolio for bob
   INSERT INTO test.results SELECT * FROM test.add_symbol_portfolio('bobs', 'AMD', 3, 9000);    -- we add 3 shares of AMD
   INSERT INTO test.results SELECT * FROM test.add_event('AMD', 9000);                          -- we add a price for AMD
+  INSERT INTO test.results SELECT * FROM test.check_last_price('AMD', 9000);                   -- we check we have the right price for AMD
   INSERT INTO test.results SELECT * FROM test.add_event('AMD', 9100);                          -- we add a price for AMD
   INSERT INTO test.results SELECT * FROM test.check_last_price('AMD', 9100);                   -- we check we have the right price for AMD
   RETURN QUERY SELECT * from test.results;
