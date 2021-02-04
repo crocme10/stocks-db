@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS main.events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-ALTER TABLE main.portfolio_symbol_map OWNER TO bob;
+ALTER TABLE main.events OWNER TO bob;
 
 CREATE TABLE IF NOT EXISTS main.stats (
   symbol UUID REFERENCES main.symbols(id) ON DELETE RESTRICT,
