@@ -330,6 +330,36 @@ END;
 $$
 LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION test.check_last_price(
+    _ticker    VARCHAR(32)
+  , _price     INTEGER
+)
+RETURNS test.result_type
+AS $$
+DECLARE
+  res test.result_type;
+  tmp INTEGER;
+  e6 text; e7 text; e8 text; e9 text;
+BEGIN
+  SELECT CONCAT('check price', ' ', $1) INTO res.name;
+  SELECT * FROM api.find_last_price_by_ticker($1) INTO tmp;
+  IF tmp = $2 THEN
+    res.description := json_build_object();
+    res.status := TRUE;
+  ELSE
+    res.description := json_build_object('code', 'invalid price', 'expected', $2, 'actual', tmp);
+    res.status := FALSE;
+  END IF;
+  RETURN res;
+EXCEPTION
+  when others then get stacked diagnostics e6=returned_sqlstate, e7=message_text, e8=pg_exception_detail, e9=pg_exception_context;
+  res.description := json_build_object('code',e6,'message',e7,'detail',e8,'context',e9);
+  res.status := FALSE;
+  RETURN res;
+END;
+$$
+LANGUAGE plpgsql;
+
 -------------------
 ----- M A I N -----
 -------------------
@@ -353,6 +383,7 @@ BEGIN
   INSERT INTO test.results SELECT * FROM test.add_symbol_portfolio('bobs', 'AMD', 3, 9000);    -- we add 3 shares of AMD
   INSERT INTO test.results SELECT * FROM test.add_event('AMD', 9000);                          -- we add a price for AMD
   INSERT INTO test.results SELECT * FROM test.add_event('AMD', 9100);                          -- we add a price for AMD
+  INSERT INTO test.results SELECT * FROM test.check_last_price('AMD', 9100);                   -- we check we have the right price for AMD
   RETURN QUERY SELECT * from test.results;
 END;
 $$
