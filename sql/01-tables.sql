@@ -73,7 +73,9 @@ CREATE TABLE IF NOT EXISTS main.orders (
   type main.order_type,
   portfolio UUID REFERENCES main.portfolios(id) ON DELETE RESTRICT,
   symbol UUID REFERENCES main.symbols(id) ON DELETE RESTRICT,
-  quantity INTEGER
+  price INTEGER,
+  quantity INTEGER,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 ALTER TABLE main.orders OWNER TO bob;

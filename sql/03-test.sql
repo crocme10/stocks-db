@@ -301,6 +301,36 @@ END;
 $$
 LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION test.check_portfolio_balance(
+    _portfolio   VARCHAR(255)
+  , _expected    INTEGER
+)
+RETURNS test.result_type
+AS $$
+DECLARE
+  res test.result_type;
+  _balance INTEGER;
+  e6 text; e7 text; e8 text; e9 text;
+BEGIN
+  SELECT CONCAT('check balance', ' ', $1) INTO res.name;
+  SELECT balance FROM api.find_portfolio_by_name($1) INTO _balance;
+  IF _balance = $2 THEN
+    res.description := json_build_object();
+    res.status := TRUE;
+  ELSE
+    res.description := json_build_object('code', 'invalid price', 'expected', $2, 'actual', _balance);
+    res.status := FALSE;
+  END IF;
+  RETURN res;
+EXCEPTION
+  when others then get stacked diagnostics e6=returned_sqlstate, e7=message_text, e8=pg_exception_detail, e9=pg_exception_context;
+  res.description := json_build_object('code',e6,'message',e7,'detail',e8,'context',e9);
+  res.status := FALSE;
+  RETURN res;
+END;
+$$
+LANGUAGE plpgsql;
+
 -----------------------
 ----- E V E N T S -----
 -----------------------
@@ -360,6 +390,37 @@ END;
 $$
 LANGUAGE plpgsql;
 
+-----------------------
+----- O R D E R S -----
+-----------------------
+
+CREATE OR REPLACE FUNCTION test.add_order(
+    _type      main.order_type
+  , _portfolio VARCHAR(255)
+  , _ticker    VARCHAR(32)
+  , _quantity  INTEGER
+)
+RETURNS test.result_type
+AS $$
+DECLARE
+  res test.result_type;
+  tmp api.order_type;
+  e6 text; e7 text; e8 text; e9 text;
+BEGIN
+  SELECT CONCAT('add order for symbol', ' ', $3) INTO res.name;
+  SELECT * FROM api.add_order($1, $2, $3, $4) INTO tmp;
+  res.description := json_build_object();
+  res.status := TRUE;
+  RETURN res;
+EXCEPTION
+  when others then get stacked diagnostics e6=returned_sqlstate, e7=message_text, e8=pg_exception_detail, e9=pg_exception_context;
+  res.description := json_build_object('code',e6,'message',e7,'detail',e8,'context',e9);
+  res.status := FALSE;
+  RETURN res;
+END;
+$$
+LANGUAGE plpgsql;
+
 -------------------
 ----- M A I N -----
 -------------------
@@ -380,12 +441,19 @@ BEGIN
   INSERT INTO test.results SELECT * FROM test.add_symbol('AMD', 'AMD, Inc');                   -- we add a AMD symbol
   INSERT INTO test.results SELECT * FROM test.find_symbol('AMD');                              -- we check AMD is in there
   INSERT INTO test.results SELECT * FROM test.add_portfolio('bobs', 'bob', 100000);            -- we add a portfolio for bob
-  INSERT INTO test.results SELECT * FROM test.add_symbol_portfolio('bobs', 'AMD', 3, 9000);    -- we add 3 shares of AMD
+  INSERT INTO test.results SELECT * FROM test.check_portfolio_balance('bobs', 100000);         -- we check we still have the money
+  INSERT INTO test.results SELECT * FROM test.add_symbol_portfolio('bobs', 'AMD', 3, 5000);    -- we add 3 shares of AMD
+  INSERT INTO test.results SELECT * FROM test.check_portfolio_balance('bobs', 85000);          -- we check we still have the money
   INSERT INTO test.results SELECT * FROM test.add_event('AMD', 9000);                          -- we add a price for AMD
   INSERT INTO test.results SELECT * FROM test.check_last_price('AMD', 9000);                   -- we check we have the right price for AMD
-  INSERT INTO test.results SELECT * FROM test.add_event('AMD', 9100);                          -- we add a price for AMD
-  PERFORM pg_sleep(.5);
-  INSERT INTO test.results SELECT * FROM test.check_last_price('AMD', 9100);                   -- we check we have the right price for AMD
+  INSERT INTO test.results SELECT * FROM test.add_order('buy', 'bobs', 'AMD', 1);              -- we check we have the right price for AMD
+  INSERT INTO test.results SELECT * FROM test.check_portfolio_balance('bobs', 76000);          -- we check we still have the money
+  INSERT INTO test.results SELECT * FROM test.add_event('AMD', 10000);                         -- we check we have the right price for AMD
+  INSERT INTO test.results SELECT * FROM test.check_last_price('AMD', 10000);                  -- we check we have the right price for AMD
+  INSERT INTO test.results SELECT * FROM test.add_order('sell', 'bobs', 'AMD', 3);             -- we check we have the right price for AMD
+  INSERT INTO test.results SELECT * FROM test.check_portfolio_balance('bobs', 106000);         -- we check we still have the money
+  -- For some unexplained reason, if I insert a second price, it will have the same timestamp as the first and the test 'last price' will fail.
+  -- I tried with PERFORM pg_sleep(.5)... to no avail.
   RETURN QUERY SELECT * from test.results;
 END;
 $$

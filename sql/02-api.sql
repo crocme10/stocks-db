@@ -410,4 +410,76 @@ END;
 $$
 LANGUAGE plpgsql;
 
+-----------------------
+----  O R D E R S  ----
+-----------------------
 
+CREATE TYPE api.order_type AS (
+    id          UUID
+  , type        main.order_type
+  , portfolio   UUID
+  , symbol      UUID
+  , price       INTEGER
+  , quantity    INTEGER
+  , created_at  TIMESTAMPTZ
+);
+
+CREATE OR REPLACE FUNCTION api.list_orders()
+RETURNS SETOF api.order_type
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT id, type, portfolio, symbol, quantity, created_at
+  FROM main.orders;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION api.add_order(
+    _type        main.order_type
+  , _portfolio   VARCHAR(255)
+  , _ticker      VARCHAR(32)
+  , _quantity    INTEGER        -- how many stocks are added
+) RETURNS api.order_type
+AS $$
+DECLARE
+  res            api.order_type;
+  tmp            api.portfolio_symbol_type;
+  _portfolio_id  UUID;
+  _symbol_id     UUID;
+  _price         INTEGER;
+  _xxx           INTEGER;
+BEGIN
+
+  SELECT * FROM api.find_last_price_by_ticker($3) INTO _price;
+  IF _type = 'sell' THEN
+    _xxx := -1;
+  ELSE
+    _xxx := 1;
+  END IF;
+
+  SELECT * FROM api.update_portfolio_symbol($2, $3, $4, _price * _xxx) INTO tmp;
+
+  SELECT id FROM api.find_portfolio_by_name($2) INTO _portfolio_id;
+  IF _portfolio_id IS NULL THEN
+    RAISE EXCEPTION 'Nonexistent Portfolio --> %', $2
+    USING HINT = 'Please check your portfolio';
+  END IF;
+  SELECT id FROM api.find_symbol_by_ticker($3) INTO _symbol_id;
+  IF _symbol_id IS NULL THEN
+    RAISE EXCEPTION 'Nonexistent Ticker --> %', $3
+    USING HINT = 'Please check your ticker';
+  END IF;
+
+  INSERT INTO main.orders (type, portfolio, symbol, price, quantity) VALUES (
+      $1
+    , _portfolio_id
+    , _symbol_id
+    , _price
+    , $4
+  )
+  RETURNING id, type, portfolio, symbol, price, quantity, created_at INTO res;
+  RETURN res;
+END;
+$$
+LANGUAGE plpgsql;
