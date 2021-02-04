@@ -375,6 +375,11 @@ DECLARE
   _id  UUID;
 BEGIN
   SELECT id FROM api.find_symbol_by_ticker($1) INTO _id;
+  IF _id IS NULL THEN
+    RAISE EXCEPTION 'Nonexistent Ticker --> %', $2
+    USING HINT = 'Please check your ticker';
+  END IF;
+
   INSERT INTO main.events (symbol, price) VALUES (
       _id       -- symbol
     , $2        -- price
