@@ -301,6 +301,35 @@ END;
 $$
 LANGUAGE plpgsql;
 
+-----------------------
+----- E V E N T S -----
+-----------------------
+
+CREATE OR REPLACE FUNCTION test.add_event(
+    _ticker    VARCHAR(32)
+  , _price     INTEGER
+)
+RETURNS test.result_type
+AS $$
+DECLARE
+  res test.result_type;
+  tmp api.portfolio_type;
+  e6 text; e7 text; e8 text; e9 text;
+BEGIN
+  SELECT CONCAT('add event', ' ', $1) INTO res.name;
+  SELECT * FROM api.add_event($1, $2) INTO tmp;
+  res.description := json_build_object();
+  res.status := TRUE;
+  RETURN res;
+EXCEPTION
+  when others then get stacked diagnostics e6=returned_sqlstate, e7=message_text, e8=pg_exception_detail, e9=pg_exception_context;
+  res.description := json_build_object('code',e6,'message',e7,'detail',e8,'context',e9);
+  res.status := FALSE;
+  RETURN res;
+END;
+$$
+LANGUAGE plpgsql;
+
 -------------------
 ----- M A I N -----
 -------------------
@@ -322,6 +351,8 @@ BEGIN
   INSERT INTO test.results SELECT * FROM test.find_symbol('AMD');                              -- we check AMD is in there
   INSERT INTO test.results SELECT * FROM test.add_portfolio('bobs', 'bob', 100000);            -- we add a portfolio for bob
   INSERT INTO test.results SELECT * FROM test.add_symbol_portfolio('bobs', 'AMD', 3, 9000);    -- we add 3 shares of AMD
+  INSERT INTO test.results SELECT * FROM test.add_event('AMD', 9000);                          -- we add a price for AMD
+  INSERT INTO test.results SELECT * FROM test.add_event('AMD', 9100);                          -- we add a price for AMD
   RETURN QUERY SELECT * from test.results;
 END;
 $$

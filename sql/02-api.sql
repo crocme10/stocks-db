@@ -342,3 +342,67 @@ BEGIN
 END;
 $$
 LANGUAGE plpgsql;
+
+-----------------------
+----  E V E N T S  ----
+-----------------------
+
+CREATE TYPE api.event_type AS (
+    id           UUID
+  , symbol       UUID
+  , price        INTEGER
+  , created_at   TIMESTAMPTZ
+);
+
+CREATE OR REPLACE FUNCTION api.list_events()
+RETURNS SETOF api.event_type
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT id, symbol, price, created_at
+  FROM main.events;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION api.add_event(
+    _ticker    VARCHAR(32)
+  , _price     INTEGER
+) RETURNS api.event_type
+AS $$
+DECLARE
+  res api.event_type;
+  _id  UUID;
+BEGIN
+  SELECT id FROM api.find_symbol_by_ticker($1) INTO _id;
+  INSERT INTO main.events (symbol, price) VALUES (
+      _id       -- symbol
+    , $2        -- price
+  )
+  RETURNING id, symbol, price, created_at INTO res;
+  RETURN res;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION api.find_last_price_by_ticker(
+    _ticker    VARCHAR(32)
+) RETURNS INTEGER
+AS $$
+DECLARE
+  res  INTEGER;
+  _id  UUID;
+  _created_at TIMESTAMPTZ;
+BEGIN
+  SELECT id FROM api.find_symbol_by_ticker($1) INTO _id;
+  SELECT price, created_at
+    FROM main.events
+   ORDER BY created_at DESC
+   LIMIT 1
+    INTO res, _created_at;
+  RETURN res;
+END;
+$$
+LANGUAGE plpgsql;
+
+
