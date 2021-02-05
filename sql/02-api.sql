@@ -452,6 +452,8 @@ DECLARE
 BEGIN
 
   SELECT * FROM api.find_last_price_by_ticker($3) INTO _price;
+
+  -- The buy / sell is used by possibly changing the price's sign.
   IF _type = 'sell' THEN
     _xxx := -1;
   ELSE
@@ -461,6 +463,7 @@ BEGIN
   SELECT * FROM api.update_portfolio_symbol($2, $3, $4, _price * _xxx) INTO tmp;
 
   SELECT id FROM api.find_portfolio_by_name($2) INTO _portfolio_id;
+  -- This check is probably redundant since the update_portfolio_symbol includes them.
   IF _portfolio_id IS NULL THEN
     RAISE EXCEPTION 'Nonexistent Portfolio --> %', $2
     USING HINT = 'Please check your portfolio';
