@@ -64,6 +64,7 @@ do-push:
 		done; \
 		docker push $(DOCKER_REPO)/$(NAME):latest;
 
+snapshot: DOCKER_REPO := $(SNAPSHOT_REPO)
 snapshot: build push
 
 tag-new-release: VERSION := $(shell . $(RELEASE_SUPPORT); nextRelease)
@@ -86,18 +87,23 @@ tag-major-prerelease: VERSION := $(shell . $(RELEASE_SUPPORT); nextMajorPrerelea
 tag-major-prerelease: MSG := new major prerelease
 tag-major-prerelease: tag
 
+new-release: DOCKER_REPO := $(RELEASE_REPO)
 new-release: tag-new-release release ## Drop the prerelease suffix and release
 	@echo $(VERSION)
 
+new-prerelease: DOCKER_REPO := $(PRERELEASE_REPO)
 new-prerelease: tag-new-prerelease release ## Increment the prerelease count and release
 	@echo $(VERSION)
 
+patch-prerelease: DOCKER_REPO := $(PRERELEASE_REPO)
 patch-prerelease: tag-patch-prerelease release ## Increment the patch version number and release
 	@echo $(VERSION)
 
+minor-prerelease: DOCKER_REPO := $(PRERELEASE_REPO)
 minor-prerelease: tag-minor-prerelease release ## Increment the minor version number and release
 	@echo $(VERSION)
 
+major-prerelease: DOCKER_REPO := $(PRERELEASE_REPO)
 major-prerelease: tag-major-prerelease release ## Increment the major version number and release
 	@echo $(VERSION)
 
