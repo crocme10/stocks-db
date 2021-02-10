@@ -47,9 +47,9 @@ post-push:
 docker-build:
 	@	TAGS=""; \
 		for DOCKER_TAG in $(DOCKER_TAGS); do \
-		  TAGS=$$TAGS" --tag $(DOCKER_REPO)/$(DOCKER_IMAGE):$$DOCKER_TAG"; \
+		  TAGS=$$TAGS" --tag $(DOCKER_REPO)$(DOCKER_IMAGE):$$DOCKER_TAG"; \
 		done; \
-		TAGS=$$TAGS" --tag $(DOCKER_REPO)/$(DOCKER_IMAGE):latest"; \
+		TAGS=$$TAGS" --tag $(DOCKER_REPO)$(DOCKER_IMAGE):latest"; \
 		echo "docker build $(DOCKER_BUILD_ARGS) $$TAGS -f $(DOCKER_FILE_PATH) $(DOCKER_BUILD_CONTEXT)"; \
 		docker build $(DOCKER_BUILD_ARGS) $$TAGS -f $(DOCKER_FILE_PATH) $(DOCKER_BUILD_CONTEXT)
 
