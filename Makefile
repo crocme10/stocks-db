@@ -58,7 +58,7 @@ release: check-status check-release build push
 push: pre-push do-push post-push
 
 do-push:
-	docker push $(DOCKER_REPO)/$(DOCKER_IMAGE)
+	docker push $(DOCKER_REPO)$(DOCKER_IMAGE)
 
 snapshot: DOCKER_REPO := $(SNAPSHOT_REPO)/
 snapshot: build push
