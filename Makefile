@@ -105,11 +105,9 @@ major-prerelease: tag-major-prerelease release ## Increment the major version nu
 
 tag: TAG=$(shell . $(RELEASE_SUPPORT); getTag $(VERSION))
 
-tag: check-status ## Check that the tag does not already exist, changes the version in Cargo.toml, commit, and tag.
+tag: check-status ## Check that the tag does not already exist, changes the version, commit, and tag.
 	@. $(RELEASE_SUPPORT) ; ! tagExists $(TAG) || (echo "ERROR: tag $(TAG) for version $(VERSION) already tagged in git" >&2 && exit 1) ;
 	@. $(RELEASE_SUPPORT) ; setRelease $(VERSION)
-	cargo check # We need to add this cargo check which will update Cargo.lock. Otherwise Cargo.lock will be modified after,
-	            # and the release will seem dirty.
 	git add .
 	git commit -m "[Versioned] $(MSG) $(VERSION)" ;
 	git tag -a $(TAG) -m "Version $(VERSION)";
@@ -121,7 +119,7 @@ check-status: ## Check that there are no outstanding changes. (uses git status)
 		&& (echo "Status OK" >&2 ) ;
 
 check-release: TAG=$(shell . $(RELEASE_SUPPORT); getTag $(VERSION))
-check-release: ## Check that the current git tag matches the one in Cargo.toml and there are no outstanding changes.
+check-release: ## Check that the current git tag matches the one in version and there are no outstanding changes.
 	$(info $$VERSION is [${VERSION}])
 	$(info $$TAG is [${TAG}])
 	@. $(RELEASE_SUPPORT) ; tagExists $(TAG) || (echo "ERROR: version not yet tagged in git. make [minor,major,patch]-release." >&2 && exit 1) ;
