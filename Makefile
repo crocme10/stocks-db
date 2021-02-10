@@ -58,7 +58,13 @@ release: check-status check-release build push
 push: pre-push do-push post-push
 
 do-push:
-	docker push $(DOCKER_REPO)$(DOCKER_IMAGE)
+	@	TAGS=""; \
+		for DOCKER_TAG in $(DOCKER_TAGS); do \
+		  TAGS=$$TAGS" --tag $(DOCKER_REPO)$(DOCKER_IMAGE):$$DOCKER_TAG"; \
+		done; \
+		TAGS=$$TAGS" --tag $(DOCKER_REPO)$(DOCKER_IMAGE):latest"; \
+		echo "docker push $$TAGS $(DOCKER_REPO)$(DOCKER_IMAGE)"; \
+		docker push $$TAGS $(DOCKER_REPO)$(DOCKER_IMAGE)
 
 snapshot: DOCKER_REPO := $(SNAPSHOT_REPO)/
 snapshot: build push
