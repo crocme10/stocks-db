@@ -20,7 +20,7 @@ help: ## This help.
 RELEASE_SUPPORT := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))/.make-release-support
 
 VERSION=$(shell . $(RELEASE_SUPPORT) ; getVersion)
-DOCKERS = ./docker
+DOCKER_IMAGE = db
 DOCKER_TAGS=$(shell . $(RELEASE_SUPPORT) ; getDockerTags)
 TAG=$(shell . $(RELEASE_SUPPORT); getTag)
 
@@ -45,53 +45,22 @@ pre-push:
 post-push:
 
 docker-build:
-	$(info $$DOCKERS is [${DOCKERS}])
-	$(info $(DOCKER_REPO))
-	@for DOCKER in $(DOCKERS); do \
-		for ENV in $(BUILD_ENV); do \
-			TAGS=""; \
-			SPL=$${ENV/:/ }; \
-			DEB=$$(echo $$SPL | awk '{print $$1;}'); \
-			RST=$$(echo $$SPL | awk '{print $$2;}'); \
-			echo "Building $$DOCKER for debian $$DEB / rust $$RST"; \
-			ARG_DEB="--build-arg DEBIAN_VERSION=$$DEB"; \
-			ARG_RST="--build-arg RUST_VERSION=$$RST"; \
-			for DOCKER_TAG in $(DOCKER_TAGS); do \
-			  TAGS=$$TAGS" --tag $(DOCKER_REPO)$$DOCKER:$$DOCKER_TAG-$$DEB"; \
-			done; \
-			FIRST_ENV=$$(echo $(BUILD_ENV) | awk '{print $$1;}'); \
-			if [ $$FIRST_ENV = $$ENV ]; then \
-				for DOCKER_TAG in $(DOCKER_TAGS); do \
-				  TAGS=$$TAGS" --tag $(DOCKER_REPO)$$DOCKER:$$DOCKER_TAG"; \
-				done; \
-				TAGS=$$TAGS" --tag $(DOCKER_REPO)$$DOCKER:latest"; \
-			fi; \
-			echo "docker build $(DOCKER_BUILD_ARGS) $$ARG_DEB $$ARG_RST $$TAGS -f docker/$$DOCKER/Dockerfile ."; \
-			docker build $(DOCKER_BUILD_ARGS) $$ARG_DEB $$ARG_RST $$TAGS -f docker/$$DOCKER/Dockerfile . ; \
-		done; \
-	done
+	TAGS=""; \
+	for DOCKER_TAG in $(DOCKER_TAGS); do \
+	  TAGS=$$TAGS" --tag $(DOCKER_REPO)$$DOCKER_IMAGE:$$DOCKER_TAG"; \
+	done; \
+	echo "docker build $$TAGS -f docker/Dockerfile ."; \
+	docker build $$TAGS -f docker/Dockerfile .
 
 release: check-status check-release build push
 
 push: pre-push do-push post-push
 
 do-push:
-	@for DOCKER in $(DOCKERS); do \
-		for ENV in $(BUILD_ENV); do \
-			SPL=$${ENV/:/ }; \
-			DEB=$$(echo $$SPL | awk '{print $$1;}'); \
-			for DOCKER_TAG in $(DOCKER_TAGS); do \
-			  docker push $(DOCKER_REPO)$$DOCKER:$$DOCKER_TAG-$$DEB; \
-			done; \
-			FIRST_ENV=$$(echo $(BUILD_ENV) | awk '{print $$1;}'); \
-			if [ $$FIRST_ENV = $$ENV ]; then \
-				for DOCKER_TAG in $(DOCKER_TAGS); do \
-				docker push $(DOCKER_REPO)$$DOCKER:$$DOCKER_TAG; \
-				done; \
-				docker push $(DOCKER_REPO)$$DOCKER:latest; \
-			fi; \
-		done; \
-	done
+	for DOCKER_TAG in $(DOCKER_TAGS); do \
+	  docker push $(DOCKER_REPO)$$DOCKER_IMAGE:$$DOCKER_TAG; \
+	done; \
+	docker push $(DOCKER_REPO)$$DOCKER:latest
 
 snapshot: DOCKER_REPO := $(SNAPSHOT_REPO)/
 snapshot: build push
