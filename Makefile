@@ -20,7 +20,7 @@ help: ## This help.
 RELEASE_SUPPORT := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))/.make-release-support
 
 VERSION=$(shell . $(RELEASE_SUPPORT) ; getVersion)
-DOCKERS = $(patsubst ./docker/%/,%, $(dir $(wildcard ./docker/*/)))
+DOCKERS = ./docker
 DOCKER_TAGS=$(shell . $(RELEASE_SUPPORT) ; getDockerTags)
 TAG=$(shell . $(RELEASE_SUPPORT); getTag)
 
