@@ -20,7 +20,7 @@ help: ## This help.
 RELEASE_SUPPORT := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))/.make-release-support
 
 VERSION=$(shell . $(RELEASE_SUPPORT) ; getVersion)
-DOCKER_IMAGE = db
+DOCKER_IMAGE = $(shell . $(RELEASE_SUPPORT) ; getBaseName)
 DOCKER_TAGS=$(shell . $(RELEASE_SUPPORT) ; getDockerTags)
 TAG=$(shell . $(RELEASE_SUPPORT); getTag)
 
@@ -45,22 +45,20 @@ pre-push:
 post-push:
 
 docker-build:
-	TAGS=""; \
-	for DOCKER_TAG in $(DOCKER_TAGS); do \
-	  TAGS=$$TAGS" --tag $(DOCKER_REPO)$$DOCKER_IMAGE:$$DOCKER_TAG"; \
-	done; \
-	echo "docker build $$TAGS -f docker/Dockerfile ."; \
-	docker build $$TAGS -f docker/Dockerfile .
+	@	TAGS=""; \
+		for DOCKER_TAG in $(DOCKER_TAGS); do \
+		  TAGS=$$TAGS" --tag $(DOCKER_REPO)/$(DOCKER_IMAGE):$$DOCKER_TAG"; \
+		done; \
+		TAGS=$$TAGS" --tag $(DOCKER_REPO)/$(DOCKER_IMAGE):latest"; \
+		echo "docker build $(DOCKER_BUILD_ARGS) $$TAGS -f $(DOCKER_FILE_PATH) $(DOCKER_BUILD_CONTEXT)"; \
+		docker build $(DOCKER_BUILD_ARGS) $$TAGS -f $(DOCKER_FILE_PATH) $(DOCKER_BUILD_CONTEXT)
 
 release: check-status check-release build push
 
 push: pre-push do-push post-push
 
 do-push:
-	for DOCKER_TAG in $(DOCKER_TAGS); do \
-	  docker push $(DOCKER_REPO)$$DOCKER_IMAGE:$$DOCKER_TAG; \
-	done; \
-	docker push $(DOCKER_REPO)$$DOCKER:latest
+	docker push $(DOCKER_REPO)/$(DOCKER_IMAGE)
 
 snapshot: DOCKER_REPO := $(SNAPSHOT_REPO)/
 snapshot: build push

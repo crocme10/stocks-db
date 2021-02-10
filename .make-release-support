@@ -6,6 +6,7 @@
 
 SCRIPT_SRC="$(dirname "${BASH_SOURCE[${#BASH_SOURCE[@]} - 1]}")"
 SCRIPT_DIR="$(cd "${SCRIPT_SRC}" >/dev/null 2>&1 && pwd)"
+BASE_NAME="$(basename ${SCRIPT_DIR})"
 
 # Some constants for SEMVER regexp
 NAT='0|[1-9][0-9]*'
@@ -40,6 +41,12 @@ function getTag() {
 	else
 		echo "v$1"
 	fi
+}
+
+# This is the name used to make the base of the docker tag.
+# It is the basename of the directory in which lies the project.
+function getBaseName() {
+  echo ${BASE_NAME}
 }
 
 function getLastTag() {
