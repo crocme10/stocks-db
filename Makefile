@@ -35,8 +35,8 @@ SHELL=/bin/bash
 build: pre-build docker-build post-build ## Build one or more docker images
 
 check: pre-build ## Runs several tests (alias for pre-build)
-pre-build: fmt lint test
-	@echo "docker repo: $(DOCKER_REPO)"
+
+pre-build:
 
 post-build:
 
@@ -172,18 +172,3 @@ check-tag:
 
 check-version:
 	@echo $(VERSION)
-
-### RUST related rules
-
-fmt: format ## Check formatting of the code (alias for 'format')
-format: ## Check formatting of the code
-	cargo fmt --all -- --check
-
-clippy: lint ## Check quality of the code (alias for 'lint')
-lint: ## Check quality of the code
-	cargo clippy --all-features --all-targets -- --warn clippy::cargo --allow clippy::multiple_crate_versions --deny warnings
-
-test: ## Launch all tests
-	cargo test --all-targets                 # `--all-targets` but no doctests
-
-
