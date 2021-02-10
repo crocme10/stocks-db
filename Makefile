@@ -1,11 +1,9 @@
 #
 #   Based on Makefile from https://github.com/mvanholsteijn/docker-makefile
-#
-#
 #   Based on https://gist.github.com/mpneuried/0594963ad38e68917ef189b4e6a269db
 #
 #
-# import deploy config
+# Import deploy config
 # You can change the default deploy config with `make cnf="deploy_special.env" release`
 dpl ?= deploy.env
 include $(dpl)
@@ -21,23 +19,24 @@ help: ## This help.
 
 RELEASE_SUPPORT := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))/.make-release-support
 
-NAME=$(shell . $(RELEASE_SUPPORT) ; getBaseName)
 VERSION=$(shell . $(RELEASE_SUPPORT) ; getVersion)
-DOCKER_TAGS=$(addprefix $(DOCKER_REPO)/$(NAME):,$(shell . $(RELEASE_SUPPORT) ; getDockerTags))
+DOCKERS = $(patsubst ./docker/%/,%, $(dir $(wildcard ./docker/*/)))
+DOCKER_TAGS=$(shell . $(RELEASE_SUPPORT) ; getDockerTags)
 TAG=$(shell . $(RELEASE_SUPPORT); getTag)
 
 SHELL=/bin/bash
 
 .PHONY: \
 	pre-build docker-build post-build build \
-	release patch-release minor-release major-release tag check-status check-release \
+	release patch-prerelease minor-prerelease major-prerelease tag check-status check-release \
 	push pre-push do-push post-push \
 	changelog
 
-build: pre-build docker-build post-build
+build: pre-build docker-build post-build ## Build one or more docker images
 
 check: pre-build ## Runs several tests (alias for pre-build)
-pre-build:
+pre-build: fmt lint test
+	@echo "docker repo: $(DOCKER_REPO)"
 
 post-build:
 
@@ -46,25 +45,55 @@ pre-push:
 post-push:
 
 docker-build:
-	@	TAGS=""; \
-		for DOCKER_TAG in $(DOCKER_TAGS); do \
-			TAGS=$$TAGS" --tag $$DOCKER_TAG"; \
+	$(info $$DOCKERS is [${DOCKERS}])
+	$(info $(DOCKER_REPO))
+	@for DOCKER in $(DOCKERS); do \
+		for ENV in $(BUILD_ENV); do \
+			TAGS=""; \
+			SPL=$${ENV/:/ }; \
+			DEB=$$(echo $$SPL | awk '{print $$1;}'); \
+			RST=$$(echo $$SPL | awk '{print $$2;}'); \
+			echo "Building $$DOCKER for debian $$DEB / rust $$RST"; \
+			ARG_DEB="--build-arg DEBIAN_VERSION=$$DEB"; \
+			ARG_RST="--build-arg RUST_VERSION=$$RST"; \
+			for DOCKER_TAG in $(DOCKER_TAGS); do \
+			  TAGS=$$TAGS" --tag $(DOCKER_REPO)$$DOCKER:$$DOCKER_TAG-$$DEB"; \
+			done; \
+			FIRST_ENV=$$(echo $(BUILD_ENV) | awk '{print $$1;}'); \
+			if [ $$FIRST_ENV = $$ENV ]; then \
+				for DOCKER_TAG in $(DOCKER_TAGS); do \
+				  TAGS=$$TAGS" --tag $(DOCKER_REPO)$$DOCKER:$$DOCKER_TAG"; \
+				done; \
+				TAGS=$$TAGS" --tag $(DOCKER_REPO)$$DOCKER:latest"; \
+			fi; \
+			echo "docker build $(DOCKER_BUILD_ARGS) $$ARG_DEB $$ARG_RST $$TAGS -f docker/$$DOCKER/Dockerfile ."; \
+			docker build $(DOCKER_BUILD_ARGS) $$ARG_DEB $$ARG_RST $$TAGS -f docker/$$DOCKER/Dockerfile . ; \
 		done; \
-		TAGS=$$TAGS" --tag $(DOCKER_REPO)/$(NAME):latest"; \
-		echo "docker build $(DOCKER_BUILD_ARGS) $$TAGS -f $(DOCKER_FILE_PATH) $(DOCKER_BUILD_CONTEXT)"; \
-		docker build $(DOCKER_BUILD_ARGS) $$TAGS -f $(DOCKER_FILE_PATH) $(DOCKER_BUILD_CONTEXT); \
+	done
 
 release: check-status check-release build push
 
 push: pre-push do-push post-push
 
 do-push:
-	@	for DOCKER_TAG in $(DOCKER_TAGS); do \
-			docker push $$DOCKER_TAG; \
+	@for DOCKER in $(DOCKERS); do \
+		for ENV in $(BUILD_ENV); do \
+			SPL=$${ENV/:/ }; \
+			DEB=$$(echo $$SPL | awk '{print $$1;}'); \
+			for DOCKER_TAG in $(DOCKER_TAGS); do \
+			  docker push $(DOCKER_REPO)$$DOCKER:$$DOCKER_TAG-$$DEB; \
+			done; \
+			FIRST_ENV=$$(echo $(BUILD_ENV) | awk '{print $$1;}'); \
+			if [ $$FIRST_ENV = $$ENV ]; then \
+				for DOCKER_TAG in $(DOCKER_TAGS); do \
+				docker push $(DOCKER_REPO)$$DOCKER:$$DOCKER_TAG; \
+				done; \
+				docker push $(DOCKER_REPO)$$DOCKER:latest; \
+			fi; \
 		done; \
-		docker push $(DOCKER_REPO)/$(NAME):latest;
+	done
 
-snapshot: DOCKER_REPO := $(SNAPSHOT_REPO)
+snapshot: DOCKER_REPO := $(SNAPSHOT_REPO)/
 snapshot: build push
 
 tag-new-release: VERSION := $(shell . $(RELEASE_SUPPORT); nextRelease)
@@ -87,31 +116,33 @@ tag-major-prerelease: VERSION := $(shell . $(RELEASE_SUPPORT); nextMajorPrerelea
 tag-major-prerelease: MSG := new major prerelease
 tag-major-prerelease: tag
 
-new-release: DOCKER_REPO := $(RELEASE_REPO)
+new-release: DOCKER_REPO := $(RELEASE_REPO)/
 new-release: tag-new-release release ## Drop the prerelease suffix and release
 	@echo $(VERSION)
 
-new-prerelease: DOCKER_REPO := $(PRERELEASE_REPO)
+new-prerelease: DOCKER_REPO := $(PRERELEASE_REPO)/
 new-prerelease: tag-new-prerelease release ## Increment the prerelease count and release
-	@echo $(VERSION)
+	@echo "version $(VERSION) released on $(DOCKER_REPO)"
 
-patch-prerelease: DOCKER_REPO := $(PRERELEASE_REPO)
+patch-prerelease: DOCKER_REPO := $(PRERELEASE_REPO)/
 patch-prerelease: tag-patch-prerelease release ## Increment the patch version number and release
-	@echo $(VERSION)
+	@echo "version $(VERSION) released on $(DOCKER_REPO)"
 
-minor-prerelease: DOCKER_REPO := $(PRERELEASE_REPO)
+minor-prerelease: DOCKER_REPO := $(PRERELEASE_REPO)/
 minor-prerelease: tag-minor-prerelease release ## Increment the minor version number and release
-	@echo $(VERSION)
+	@echo "version $(VERSION) released on $(DOCKER_REPO)"
 
-major-prerelease: DOCKER_REPO := $(PRERELEASE_REPO)
+major-prerelease: DOCKER_REPO := $(PRERELEASE_REPO)/
 major-prerelease: tag-major-prerelease release ## Increment the major version number and release
-	@echo $(VERSION)
+	@echo "version $(VERSION) released on $(DOCKER_REPO)"
 
 tag: TAG=$(shell . $(RELEASE_SUPPORT); getTag $(VERSION))
 
 tag: check-status ## Check that the tag does not already exist, changes the version in Cargo.toml, commit, and tag.
 	@. $(RELEASE_SUPPORT) ; ! tagExists $(TAG) || (echo "ERROR: tag $(TAG) for version $(VERSION) already tagged in git" >&2 && exit 1) ;
 	@. $(RELEASE_SUPPORT) ; setRelease $(VERSION)
+	cargo check # We need to add this cargo check which will update Cargo.lock. Otherwise Cargo.lock will be modified after,
+	            # and the release will seem dirty.
 	git add .
 	git commit -m "[Versioned] $(MSG) $(VERSION)" ;
 	git tag -a $(TAG) -m "Version $(VERSION)";
@@ -136,11 +167,23 @@ changelog: check-status
 
 ######### Debug
 
-check-name:
-	@echo $(NAME)
-
 check-tag:
 	@echo $(TAG)
 
 check-version:
 	@echo $(VERSION)
+
+### RUST related rules
+
+fmt: format ## Check formatting of the code (alias for 'format')
+format: ## Check formatting of the code
+	cargo fmt --all -- --check
+
+clippy: lint ## Check quality of the code (alias for 'lint')
+lint: ## Check quality of the code
+	cargo clippy --all-features --all-targets -- --warn clippy::cargo --allow clippy::multiple_crate_versions --deny warnings
+
+test: ## Launch all tests
+	cargo test --all-targets                 # `--all-targets` but no doctests
+
+
