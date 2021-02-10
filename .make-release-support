@@ -71,8 +71,10 @@ function getReleaseMessage() {
 # This function returns the tag(s) for use with Docker.
 # If the version (from getRelease) is a prerelease (finishes with rcN),
 # then we only return this value.
-# If the versios is a release (X.Y.Z), then we return an array of strings,
+# If the version is a release (X.Y.Z), then we return an array of strings,
 # X X.Y X.Y.Z
+# Otherwise, if its a prerelease, we just return the X.Y.Z-rcN, so that we
+# don't polute the tags with a prerelease.
 function getDockerTags() {
 	local ORIGINAL=$(getRelease)
   if [[ "$ORIGINAL" =~ $SEMVER_REGEX ]]; then
