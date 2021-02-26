@@ -151,6 +151,14 @@ END;
 $$
 LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION api.delete_all_currencies()
+AS $$
+BEGIN
+  TRUNCATE TABLE main.currencies;
+END;
+$$
+LANGUAGE plpgsql;
+
 ------------------------
 ----  S Y M B O L S ----
 ------------------------
